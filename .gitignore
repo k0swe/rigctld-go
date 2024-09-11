@@ -1,0 +1,7 @@
+# Generated driver binary
+wsjtx-go
+
+.idea/
+.vscode/
+
+.pc
