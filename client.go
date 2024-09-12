@@ -11,6 +11,8 @@ import (
 const localhostAddr = "127.0.0.1"
 const rigctldPort = 4532
 
+var readDeadline = 100 * time.Millisecond
+
 type Client struct {
 	ServerAddr net.Addr
 	conn       *net.TCPConn
@@ -38,6 +40,10 @@ func ConnectTo(ipAddr net.IP, port uint) (Client, error) {
 	return Client{addr, conn}, nil
 }
 
+func SetReadDeadline(d time.Duration) {
+	readDeadline = d
+}
+
 func (s *Client) writeRead(send string) (string, error) {
 	_, err := s.conn.Write([]byte(send))
 	if err != nil {
@@ -47,8 +53,7 @@ func (s *Client) writeRead(send string) (string, error) {
 	reader := bufio.NewReader(s.conn)
 	var resp string
 	for {
-		// TODO: Should this be configurable?
-		err := s.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		err := s.conn.SetReadDeadline(time.Now().Add(readDeadline))
 		if err != nil {
 			return "", err
 		}
