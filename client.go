@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 )
 
 const localhostAddr = "127.0.0.1"
@@ -72,15 +73,62 @@ func (s *Client) SetFreq(freq Frequency) error {
 	return nil
 }
 
+// GetMode returns the current mode and bandpass width of the radio.
+func (s *Client) GetMode() (string, Frequency, error) {
+	resp, err := s.writeRead("m\n")
+	if err != nil {
+		return "", 0, err
+	}
+
+	var mode string
+	var bandpass Frequency
+	_, err = fmt.Sscanf(resp, "%s\n%d\n", &mode, &bandpass)
+	if err != nil {
+		return "", 0, err
+	}
+	return mode, bandpass, nil
+}
+
+func (s *Client) SetMode(mode string, bandpass Frequency) error {
+	resp, err := s.writeRead(fmt.Sprintf("M %s %d\n", mode, bandpass))
+	if err != nil {
+		return err
+	}
+
+	var report int
+	_, err = fmt.Sscanf(resp, "RPRT %d\n", &report)
+	if err != nil {
+		return err
+	}
+	if report != 0 {
+		// TODO: Can this be more specific? Probably would have to delve into the rigctld source
+		return errors.New(fmt.Sprintf("rigctld error %d", report))
+	}
+	return nil
+}
+
 func (s *Client) writeRead(send string) (string, error) {
 	_, err := s.conn.Write([]byte(send))
 	if err != nil {
 		return "", err
 	}
+
 	reader := bufio.NewReader(s.conn)
-	resp, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
+	var resp string
+	for {
+		err := s.conn.SetReadDeadline(time.Now().Add(30 * time.Millisecond))
+		if err != nil {
+			return "", err
+		}
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				break
+			}
+			return "", err
+		}
+		resp += line
 	}
 	return resp, nil
 }
