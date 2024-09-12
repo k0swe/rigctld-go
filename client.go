@@ -16,9 +16,6 @@ type Client struct {
 	conn       *net.TCPConn
 }
 
-// Frequency is the frequency of the radio's VFO in hertz.
-type Frequency int64
-
 // Connect creates a TCP connection to communicate with rigctld on the default address and port.
 func Connect() (Client, error) {
 	return ConnectTo(net.ParseIP(localhostAddr), rigctldPort)
@@ -74,23 +71,28 @@ func (s *Client) SetFreq(freq Frequency) error {
 }
 
 // GetMode returns the current mode and bandpass width of the radio.
-func (s *Client) GetMode() (string, Frequency, error) {
+func (s *Client) GetMode() (Mode, Frequency, error) {
 	resp, err := s.writeRead("m\n")
 	if err != nil {
-		return "", 0, err
+		return -1, 0, err
 	}
 
-	var mode string
+	var modeStr string
 	var bandpass Frequency
-	_, err = fmt.Sscanf(resp, "%s\n%d\n", &mode, &bandpass)
+	_, err = fmt.Sscanf(resp, "%s\n%d\n", &modeStr, &bandpass)
 	if err != nil {
-		return "", 0, err
+		return -1, 0, err
+	}
+	mode, err := ModeFromString(modeStr)
+	if err != nil {
+		return -1, 0, err
 	}
 	return mode, bandpass, nil
 }
 
-func (s *Client) SetMode(mode string, bandpass Frequency) error {
-	resp, err := s.writeRead(fmt.Sprintf("M %s %d\n", mode, bandpass))
+func (s *Client) SetMode(mode Mode, bandpass Frequency) error {
+	modeStr := mode.String()
+	resp, err := s.writeRead(fmt.Sprintf("M %s %d\n", modeStr, bandpass))
 	if err != nil {
 		return err
 	}
@@ -116,6 +118,7 @@ func (s *Client) writeRead(send string) (string, error) {
 	reader := bufio.NewReader(s.conn)
 	var resp string
 	for {
+		// TODO: Should this be configurable?
 		err := s.conn.SetReadDeadline(time.Now().Add(30 * time.Millisecond))
 		if err != nil {
 			return "", err

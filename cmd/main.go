@@ -15,9 +15,9 @@ func main() {
 	}
 
 	setThenReadFreq(client, 7200000)
-	setThenReadMode(client, "CW", 100)
+	setThenReadMode(client, rigctld.CW, 100)
 	setThenReadFreq(client, 14050000)
-	setThenReadMode(client, "USB", 3000)
+	setThenReadMode(client, rigctld.USB, 3000)
 }
 
 func setThenReadFreq(client rigctld.Client, freq rigctld.Frequency) {
@@ -35,7 +35,7 @@ func setThenReadFreq(client rigctld.Client, freq rigctld.Frequency) {
 	log.Printf("Frequency is now %s Hz\n", p.Sprintf("%d", freq))
 }
 
-func setThenReadMode(client rigctld.Client, mode string, bandpass rigctld.Frequency) {
+func setThenReadMode(client rigctld.Client, mode rigctld.Mode, bandpass rigctld.Frequency) {
 	err := client.SetMode(mode, bandpass)
 	if err != nil {
 		log.Fatalf("%v", err)
