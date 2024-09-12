@@ -3,7 +3,7 @@ all: test
 
 .PHONY: clean
 clean:
-	rm ../golang-github-k0swe-wsjtx-go*
+	rm ../golang-github-k0swe-rigctld-go*
 
 .PHONY: test
 test:
