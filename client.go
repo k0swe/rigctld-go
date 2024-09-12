@@ -48,7 +48,7 @@ func (s *Client) writeRead(send string) (string, error) {
 	var resp string
 	for {
 		// TODO: Should this be configurable?
-		err := s.conn.SetReadDeadline(time.Now().Add(30 * time.Millisecond))
+		err := s.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 		if err != nil {
 			return "", err
 		}
