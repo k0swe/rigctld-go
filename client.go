@@ -10,12 +10,12 @@ import (
 
 const localhostAddr = "127.0.0.1"
 const rigctldPort = 4532
-
-var readDeadline = 100 * time.Millisecond
+const defaultReadDeadline = 100 * time.Millisecond
 
 type Client struct {
-	ServerAddr net.Addr
-	conn       *net.TCPConn
+	ServerAddr   net.Addr
+	conn         *net.TCPConn
+	readDeadline time.Duration
 }
 
 // Connect creates a TCP connection to communicate with rigctld on the default address and port.
@@ -37,11 +37,11 @@ func ConnectTo(ipAddr net.IP, port uint) (Client, error) {
 	if conn == nil {
 		return Client{}, errors.New("rigctld tcp connection not opened")
 	}
-	return Client{addr, conn}, nil
+	return Client{addr, conn, defaultReadDeadline}, nil
 }
 
-func SetReadDeadline(d time.Duration) {
-	readDeadline = d
+func (s *Client) SetReadDeadline(d time.Duration) {
+	s.readDeadline = d
 }
 
 func (s *Client) writeRead(send string) (string, error) {
@@ -53,7 +53,7 @@ func (s *Client) writeRead(send string) (string, error) {
 	reader := bufio.NewReader(s.conn)
 	var resp string
 	for {
-		err := s.conn.SetReadDeadline(time.Now().Add(readDeadline))
+		err := s.conn.SetReadDeadline(time.Now().Add(s.readDeadline))
 		if err != nil {
 			return "", err
 		}
