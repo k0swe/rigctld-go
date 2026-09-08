@@ -1,9 +1,6 @@
 package rigctld
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 func (s *Client) GetFreq() (Frequency, error) {
 	resp, err := s.writeRead("f\n")
@@ -32,7 +29,7 @@ func (s *Client) SetFreq(freq Frequency) error {
 	}
 	if report != 0 {
 		// TODO: Can this be more specific? Probably would have to delve into the rigctld source
-		return errors.New(fmt.Sprintf("rigctld error %d", report))
+		return fmt.Errorf("rigctld error %d", report)
 	}
 	return nil
 }
@@ -71,7 +68,7 @@ func (s *Client) SetMode(mode Mode, bandpass Frequency) error {
 	}
 	if report != 0 {
 		// TODO: Can this be more specific? Probably would have to delve into the rigctld source
-		return errors.New(fmt.Sprintf("rigctld error %d", report))
+		return fmt.Errorf("rigctld error %d", report)
 	}
 	return nil
 }
